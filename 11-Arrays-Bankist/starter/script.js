@@ -61,10 +61,22 @@ const inputLoanAmount = document.querySelector('.form__input--loan-amount');
 const inputCloseUsername = document.querySelector('.form__input--user');
 const inputClosePin = document.querySelector('.form__input--pin');
 
-const displayMovements = function (movements) {
+const displayMovements = function (acc, sort = 0) {
+  const { movements } = acc;
+
   containerMovements.innerHTML = '';
 
-  movements.forEach(function (mov, i) {
+  let movs;
+
+  if (sort === 0) {
+    movs = movements;
+  } else if (sort === 1) {
+    movs = movements.slice().sort((a, b) => a - b);
+  } else if (sort === -1) {
+    movs = movements.slice().sort((a, b) => b - a);
+  }
+
+  movs.forEach(function (mov, i) {
     const type = mov > 0 ? 'deposit' : 'withdrawal';
 
     const html = `
@@ -81,15 +93,18 @@ const displayMovements = function (movements) {
   });
 };
 
-const calcDisplayBalance = function (movements) {
-  const balance = movements.reduce((accumulator, current) => {
+const calcDisplayBalance = function (acc) {
+  const { movements } = acc;
+
+  acc.balance = movements.reduce((accumulator, current) => {
     return accumulator + current;
   }, 0);
 
-  labelBalance.textContent = `${balance}€`;
+  labelBalance.textContent = `${acc.balance}€`;
 };
 
-const calcDisplaySummary = function (movements) {
+const calcDisplaySummary = function (acc) {
+  const { movements, interestRate } = acc;
   const incomes = movements
     .filter(el => el > 0)
     .reduce((accumulator, current) => accumulator + current, 0);
@@ -102,7 +117,7 @@ const calcDisplaySummary = function (movements) {
     .filter(el => el > 0)
     .reduce((accumulator, current) => {
       if ((current * 1.2) / 100 >= 1) {
-        return accumulator + (current * 1.2) / 100;
+        return accumulator + (current * interestRate) / 100;
       } else {
         return accumulator;
       }
@@ -117,16 +132,123 @@ const createUsernames = function (accs) {
   accs.forEach(acc => {
     acc.username = acc.owner
       .toLowerCase()
-      .split()
+      .split(' ')
       .map(name => name[0])
-      .join();
+      .join('');
   });
 };
 
-displayMovements(account1.movements);
-calcDisplayBalance(account1.movements);
-calcDisplaySummary(account1.movements);
+const refreshPage = function (acc) {
+  displayMovements(acc);
+  calcDisplayBalance(acc);
+  calcDisplaySummary(acc);
+};
+
 createUsernames(accounts);
+
+let currentAccount;
+
+btnLogin.addEventListener('click', function (e) {
+  e.preventDefault();
+
+  currentAccount = accounts.find(
+    acc => acc.username === inputLoginUsername.value
+  );
+
+  if (currentAccount?.pin === Number(inputLoginPin.value)) {
+    labelWelcome.textContent = `Welcome back ${
+      currentAccount.owner.split(' ')[0]
+    }`;
+
+    containerApp.style.opacity = 100;
+
+    inputLoginUsername.value = inputLoginPin.value = '';
+
+    inputLoginUsername.blur();
+    inputLoginPin.blur();
+
+    refreshPage(currentAccount);
+  }
+});
+
+btnTransfer.addEventListener('click', function (e) {
+  e.preventDefault();
+
+  const receiverAcc = accounts.find(
+    el => el.username === inputTransferTo.value
+  );
+  const amount = Number(inputTransferAmount.value);
+
+  if (
+    amount > 0 &&
+    amount <= currentAccount.balance &&
+    receiverAcc &&
+    receiverAcc?.username !== currentAccount.username
+  ) {
+    currentAccount.movements.push(-amount);
+    receiverAcc.movements.push(amount);
+
+    refreshPage(currentAccount);
+
+    inputTransferTo.blur();
+    inputTransferAmount.blur();
+  }
+
+  inputTransferTo.value = inputTransferAmount.value = '';
+});
+
+btnLoan.addEventListener('click', function (e) {
+  e.preventDefault();
+
+  const amount = Number(inputLoanAmount.value);
+
+  if (amount > 0 && currentAccount.movements.some(mov => mov >= amount * 0.1)) {
+    currentAccount.movements.push(amount);
+
+    refreshPage(currentAccount);
+  }
+
+  inputLoanAmount.value = '';
+  inputLoanAmount.blur();
+});
+
+btnClose.addEventListener('click', function (e) {
+  e.preventDefault();
+
+  if (
+    currentAccount.username === inputCloseUsername.value &&
+    currentAccount.pin === Number(inputClosePin.value)
+  ) {
+    const index = accounts.findIndex(
+      acc => acc.username === currentAccount.username
+    );
+
+    accounts.splice(index, 1);
+
+    containerApp.style.opacity = 0;
+  }
+
+  inputCloseUsername.value = inputClosePin.value = '';
+
+  inputCloseUsername.blur();
+  inputClosePin.blur();
+});
+
+let sorted = 0;
+
+btnSort.addEventListener('click', function (e) {
+  e.preventDefault();
+
+  if (sorted === 0) {
+    sorted = 1;
+  } else if (sorted === 1) {
+    sorted = -1;
+  } else if (sorted === -1) {
+    sorted = 0;
+  }
+
+  displayMovements(currentAccount, sorted);
+});
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
@@ -226,3 +348,121 @@ GOOD LUCK 😀
 //       .reduce((accumulator, age) => accumulator + age, 0) / ages.length
 //   );
 // };
+
+// const bankdepositsum1 = accounts.reduce((accumulator, current) => {
+//   current.movements.forEach(mov => {
+//     mov > 0 && (accumulator += mov);
+//   });
+
+//   return accumulator;
+// }, 0);
+
+// const bankdepositsum2 = accounts
+//   .flatMap(acc => {
+//     console.log('first', acc.movements);
+//     return acc.movements;
+//   })
+//   .filter(mov => {
+//     return mov > 0;
+//   })
+//   .reduce((accumulator, current) => {
+//     return accumulator + current;
+//   }, 0);
+
+// console.log(bankdepositsum1, bankdepositsum2);
+
+// const numdeposit1000 = accounts.reduce((accumulator, current) => {
+//   current.movements.forEach(mov => {
+//     mov > 1000 && accumulator++;
+//   });
+
+//   return accumulator;
+// }, 0);
+
+// console.log(numdeposit1000);
+
+///////////////////////////////////////
+// Coding Challenge #4
+
+/* 
+Julia and Kate are still studying dogs, and this time they are studying if dogs are eating too much or too little.
+Eating too much means the dog's current food portion is larger than the recommended portion, and eating too little is the opposite.
+Eating an okay amount means the dog's current food portion is within a range 10% above and 10% below the recommended portion (see hint).
+
+HINT 1: Use many different tools to solve these challenges, you can use the summary lecture to choose between them 😉
+HINT 2: Being within a range 10% above and below the recommended portion means: current > (recommended * 0.90) && current < (recommended * 1.10). Basically, the current portion should be between 90% and 110% of the recommended portion.
+
+TEST DATA:
+
+GOOD LUCK 😀
+*/
+const dogs = [
+  { weight: 22, curFood: 250, owners: ['Alice', 'Bob'] },
+  { weight: 8, curFood: 200, owners: ['Matilda'] },
+  { weight: 13, curFood: 275, owners: ['Sarah', 'John'] },
+  { weight: 32, curFood: 340, owners: ['Michael'] },
+];
+
+// 1. Loop over the array containing dog objects, and for each dog, calculate the recommended food portion and add it to the object as a new property. Do NOT create a new array, simply loop over the array. Forumla: recommendedFood = weight ** 0.75 * 28. (The result is in grams of food, and the weight needs to be in kg)
+
+dogs.forEach(dog => {
+  dog.recommended = Math.trunc(dog.weight ** 0.75 * 28);
+});
+console.log(dogs);
+
+// 2. Find Sarah's dog and log to the console whether it's eating too much or too little. HINT: Some dogs have multiple owners, so you first need to find Sarah in the owners array, and so this one is a bit tricky (on purpose) 🤓
+const [sarahsDog] = dogs.filter(dog => dog.owners.includes('Sarah'));
+// const sarahsDog = dogs.find(dog => dog.owners.includes('Sarah'));
+if (sarahsDog.curFood > sarahsDog.recommended * 1.1) {
+  console.log("Sarah's dog is eating too much");
+} else if (sarahsDog.curFood < sarahsDog.recommended * 0.9) {
+  console.log("Sarah's dog is eating too little");
+}
+
+// 3. Create an array containing all owners of dogs who eat too much ('ownersEatTooMuch') and an array with all owners of dogs who eat too little ('ownersEatTooLittle').
+
+const { ownersEatTooMuch, ownersEatTooLittle } = dogs.reduce(
+  (accumulator, current) => {
+    if (current.curFood > current.recommended * 1.1) {
+      accumulator.ownersEatTooMuch = accumulator.ownersEatTooMuch.concat(
+        current.owners
+      );
+    } else if (current.curFood < current.recommended * 0.9) {
+      accumulator.ownersEatTooLittle = accumulator.ownersEatTooLittle.concat(
+        current.owners
+      );
+    }
+
+    return accumulator;
+  },
+  { ownersEatTooLittle: [], ownersEatTooMuch: [] }
+);
+
+// 4. Log a string to the console for each array created in 3., like this: "Matilda and Alice and Bob's dogs eat too much!" and "Sarah and John and Michael's dogs eat too little!"
+console.log(
+  `${ownersEatTooMuch.join(' and ')}'s dogs eat too much!`,
+  `${ownersEatTooLittle.join(' and ')}'s dogs eat too little!`
+);
+
+// 5. Log to the console whether there is any dog eating EXACTLY the amount of food that is recommended (just true or false)
+console.log(dogs.some(dog => dog.curFood === dog.recommended));
+
+// 6. Log to the console whether there is any dog eating an OKAY amount of food (just true or false)
+console.log(
+  '6',
+  dogs.some(
+    dog =>
+      dog.curFood < dog.recommended * 1.1 && dog.curFood > dog.recommended * 0.9
+  )
+);
+
+// 7. Create an array containing the dogs that are eating an OKAY amount of food (try to reuse the condition used in 6.)
+console.log(
+  '7',
+  dogs.filter(
+    dog =>
+      dog.curFood < dog.recommended * 1.1 && dog.curFood > dog.recommended * 0.9
+  )
+);
+// 8. Create a shallow copy of the dogs array and sort it by recommended food portion in an ascending order (keep in mind that the portions are inside the array's objects)
+console.log(dogs.slice().sort((a, b) => a.recommended - b.recommended));
