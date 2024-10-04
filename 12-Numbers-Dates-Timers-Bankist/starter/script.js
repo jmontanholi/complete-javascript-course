@@ -341,19 +341,19 @@ btnSort.addEventListener('click', function (e) {
   sorted = !sorted;
 });
 
-let options = {
-  hour: 'numeric',
-  minute: 'numeric',
-  second: 'numeric',
-  day: 'numeric',
-  weekday: 'long',
-  year: 'numeric',
-  month: 'numeric',
-  era: 'long',
-};
-const formatter = new Intl.DateTimeFormat('pt-PT', options);
+// let options = {
+//   hour: 'numeric',
+//   minute: 'numeric',
+//   second: 'numeric',
+//   day: 'numeric',
+//   weekday: 'long',
+//   year: 'numeric',
+//   month: 'numeric',
+//   era: 'long',
+// };
+// const formatter = new Intl.DateTimeFormat('pt-PT', options);
 
-setInterval(() => {
-  const now = new Date();
-  console.log(`${formatter.format(now)}`);
-}, 1000);
+// setInterval(() => {
+//   const now = new Date();
+//   console.log(`${formatter.format(now)}`);
+// }, 1000);
