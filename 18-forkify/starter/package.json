@@ -1,0 +1,19 @@
+{
+  "name": "forkify",
+  "version": "1.0.0",
+  "description": "Recipe application",
+  "scripts": {
+    "start": "(parcel index.html) && parcel watch index.html",
+    "build": "parcel build index.html"
+  },
+  "author": "joao",
+  "license": "ISC",
+  "devDependencies": {
+    "@parcel/transformer-sass": "^2.12.0",
+    "parcel": "^2.12.0",
+    "sass": "^1.79.4"
+  },
+  "dependencies": {
+    "fracty": "^1.0.11"
+  }
+}
